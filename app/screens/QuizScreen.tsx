@@ -6,6 +6,16 @@ import { questions } from "../data/questions";
 import Lottie from "lottie-react";
 import flameAnim from "@/public/green_flame.json";
 
+// 🔹 Fisher-Yates shuffle function
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
 export default function QuizScreen({
   onFinish,
 }: {
@@ -15,8 +25,12 @@ export default function QuizScreen({
   const [score, setScore] = useState(0);
   const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
   const [showScroll, setShowScroll] = useState(false);
-  const [isWaving, setIsWaving] = useState(true); // Merlin waves before question appears
+  const [isWaving, setIsWaving] = useState(true);
+  const [shuffledOptions, setShuffledOptions] = useState<string[]>([]);
 
+  const q = questions[current];
+
+  // 🔹 Handle animation between questions
   useEffect(() => {
     setShowScroll(false);
     setIsWaving(true);
@@ -24,13 +38,17 @@ export default function QuizScreen({
     const timer = setTimeout(() => {
       setIsWaving(false);
       setShowScroll(true);
-    }, 1500); // wand wave duration
+    }, 1500);
+
+    // Shuffle options for current question
+    setShuffledOptions(shuffleArray(q.options));
 
     return () => clearTimeout(timer);
   }, [current]);
 
+  // 🔹 Handle answer selection
   const handleAnswer = (option: string) => {
-    const isCorrect = option === questions[current].answer;
+    const isCorrect = option === q.answer;
     setFeedback(isCorrect ? "correct" : "wrong");
     if (isCorrect) setScore(score + 1);
 
@@ -43,8 +61,6 @@ export default function QuizScreen({
       }
     }, 2000);
   };
-
-  const q = questions[current];
 
   return (
     <div className="flex flex-col items-center justify-center h-screen relative text-center px-4 overflow-hidden bg-white">
@@ -84,8 +100,9 @@ export default function QuizScreen({
           <h2 className="text-2xl mb-4 font-semibold text-green-700">
             {q.question}
           </h2>
+
           <div className="grid grid-cols-2 gap-3">
-            {q.options.map((option) => (
+            {shuffledOptions.map((option) => (
               <button
                 key={option}
                 onClick={() => handleAnswer(option)}
