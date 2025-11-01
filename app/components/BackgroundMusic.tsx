@@ -8,15 +8,25 @@ export default function BackgroundMusic() {
 
   useEffect(() => {
     const audio = audioRef.current;
-    if (audio) {
-      // Try to play automatically (may need user gesture first)
-      const playPromise = audio.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(() => {
-          console.log("Autoplay prevented. Waiting for user interaction...");
-        });
+    if (!audio) return;
+
+    // Try autoplay immediately
+    const tryPlay = async () => {
+      try {
+        await audio.play();
+      } catch (err) {
+        console.log("Autoplay prevented. Waiting for user interaction...");
+        const unlock = () => {
+          audio.play().catch(() => {});
+          window.removeEventListener("click", unlock);
+          window.removeEventListener("keydown", unlock);
+        };
+        window.addEventListener("click", unlock);
+        window.addEventListener("keydown", unlock);
       }
-    }
+    };
+
+    tryPlay();
   }, []);
 
   return <audio ref={audioRef} src="/mystical_loop.mp3" loop preload="auto" />;
